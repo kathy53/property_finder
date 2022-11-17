@@ -1,17 +1,10 @@
 """ Crawler to fetch property data from the website lamudi.com.mx/yucatan/casa/for-sale/ 
 
-    Fetching a list, for each property, with the following data:
-    geo-point               
-    property name           
-    town                    
-    description             
-    price                   
-    area in square meters   
-    buil square meters      
-    bed rooms       
-
-    The adds are showed in batchs of 30. Thus we need to do some page-change
-    Store the info in an individual file
+    Fetching a list, for each listed property in lamudi-yucatan. Properties' data: geo-point, 
+    property name, town, description, price, area in square meters, buil square meters, and
+    bed rooms
+    The adds are showed in batchs of 30. 
+    Store the info in an individual file and upload it into 'property-finder-data' s3-bucket
 
 """
 
@@ -21,6 +14,10 @@ import scrapy   #import library to crawl
 import pudb     #it's used to study the errors
 from math import ceil
 import re       #to split strings
+import os
+import boto3
+import io
+import datetime
 
 class PropertiesSpider(scrapy.Spider):  
     """ name is used as a reference of this code (spider) for scrapy commands
@@ -29,8 +26,12 @@ class PropertiesSpider(scrapy.Spider):
             it allows to avoid accidental errors
         start_urls is the starting point 
          """
-    name = 'properties_crawler'                 
-    
+    name = 'properties_crawler'     
+    BUCKET = 'property-finder-data'            
+    s3 = boto3.client(service_name='s3', region_name='us-west-2',
+    aws_access_key_id = os.environ['AWS_ACCESS_KEY_ID'],
+    aws_secret_access_key = os.environ['AWS_SECRET_ACCESS_KEY']
+    )
     allowed_domains = ['www.lamudi.com.mx']
     #creo que tengo que cambiar los siguientes parametros
     custom_settings= {'AUTOTHROTTLE_START_DELAY': 3,
@@ -70,6 +71,11 @@ class PropertiesSpider(scrapy.Spider):
             list_all_property_info   LIST: contains all the data related to the property such as geo-point, description, etc       
             list_property_url        LIST: contains all url per page to create the name of the file where the property info will be store
         """
+        BUCKET = 'property-finder-data'
+        s3 = boto3.client(service_name='s3', region_name='us-west-2',
+        aws_access_key_id = os.environ['AWS_ACCESS_KEY_ID'],
+        aws_secret_access_key = os.environ['AWS_SECRET_ACCESS_KEY']
+        )
         def writing(file_name, property_info):
             """Storing data for each property in an individual file.
             The name of the file should take into account be unique to be use as a validation for future crawlings
@@ -87,10 +93,14 @@ class PropertiesSpider(scrapy.Spider):
             print('#######################################')
             print(file_name)
             #pudb.set_trace()
-            file_name = "./../properties_data/{}".format(file_name[26:] + '.txt')
-            with open(file_name, 'w') as f:
-                f.write(property_info)
-
+            #####Storing data locally
+            # file_name = "./../properties_data/{}".format(file_name[26:])
+            # with open(file_name, 'w') as f:
+            #     f.write(property_info)
+            #####Uploading files into S3 bucket
+            prefix= datetime.datetime.now().strftime("%Y_%m_%d")
+            file_name = "/{}".format(file_name[26:])
+            s3.upload_fileobj(io.BytesIO(property_info.encode("utf-8")), BUCKET, 'sources/lamudi/'+prefix+file_name)    
             
 
         #list_geo_point = response.xpath('//div[@class="ListingCell-AllInfo ListingUnit"]/@data-geo-point').getall()
@@ -108,7 +118,7 @@ class PropertiesSpider(scrapy.Spider):
         list_property_url = response.xpath('//div[@class="ListingCell-AllInfo ListingUnit"]/a/@href').getall()
         
         for element in zip(list_all_property_info, list_property_url):
-            uncomment the next line, it writes the files
+            #write the files
             writing(element[1], element[0])
         
         print('\n\n+++++++++++++++++++++++++++++++++++\nFinishing one page :)\n\n+++++++++++++++++++++++++++++++++++\n')
