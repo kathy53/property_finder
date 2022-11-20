@@ -1,4 +1,5 @@
-scrapy
+alembic==1.8.1
+scrapy==2.7.1
 pudb==2022.1.1
 ipython==8.1.1
 python-dateutil==2.8.2
