@@ -1,0 +1,23 @@
+title = document["div"][items[14]][items_14[2]]
+property_url = document["div"][items[14]][items_14[0]]
+description = document["div"][items[14]][items_14[7]][1]['#text'].replace("\n\n", " ").replace("\n.", "").replace("\n", "")
+price = document["div"][items[1]]
+category = document["div"][items[2]]
+import json
+#in json.loads() the s makes reference to the string
+subcategory = json.loads(document["div"][items[3]])[-1]
+           #here in the future could be used a try/"exeption" if the last element doesn't exist
+bedrooms = document["div"][items[4]]
+car_spaces = document["div"][items[5]] 
+bathrooms = document["div"][items[6]]
+building_size = document["div"][items[7]]
+land_size = document["div"][items[8]]
+furnished = document["div"][items[9]]
+year_built = document["div"][items[10]]
+geo_point = json.loads(document["div"][items[12]])
+
+agent_name = document["div"][items[15]]['div']['div'][2]['div']['a']['div'][1]['div'][0]['#text']
+agent_url = document["div"][items[15]]['div']['div'][2]['div']['a']['@href']
+agent_membership = document["div"][items[15]]['div']['div'][2]['div']['a']['div'][1]['div'][1]['#text']
+
+image_url = document["div"][items[15]]['div']['div'][2]['div']['a']['div'][0]['img']['@data-src']

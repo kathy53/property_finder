@@ -27,8 +27,8 @@ def lambda_handler(event, context):
    
     replace_characters =["\n.", "\n"]
     for c in replace_characters:
-        description = document["div"].get('a', {}).get('div', [None])[1].get('#text').replace("\n\n", " ").replace(c, "")
-   
+        description = document["div"].get('a', {}).get('div', [None])[1].get('#text').replace("\n\n", " ").replace(c, " ").replace("'", "")
+        
     property_parameters = {
                     'title': document["div"].get('a', {}).get('@title'),
              'property_url': document["div"].get('a')get('@href'),
