@@ -67,23 +67,19 @@ class PropertiesSpider(scrapy.Spider):
         
     
     def parse_pages_list(self, response): 
-        """ Here we do a request for a 'url_n' to gather detailed info about the listed properties on the given 'url_n'    
-            Also we store that property information into a specific AWS object        
+        """ Request a 'url_n' to gather detailed info about the listed properties on the given 'url_n'    
+            Store property information into a specific AWS object        
         """
         def store_in_s3(file_name, property_info):
-            """Storing data for each property in an individual file.
-            The name of the file should take into account be unique to be use as a validation for future crawlings
-            In that way we'll be able to identify properties that still remain in the market:
-            maybe we could use that to create a record over the time to analyze price changes or build modifications
-            Notes:
-            file_name argument is a unique portion of a given url for each property
+            """Storing data for each property in an individual object
+            The name of the file should be unique to serve as a validation for future crawlings
             """
-            #####Storing data locally
+            # Storing data locally
             # file_name = "./../properties_data/{}".format(file_name[26:])
             # with open(file_name, 'w') as f:
             #     f.write(property_info)
             
-            #####Uploading files into S3 bucket
+            # Uploading files into S3 bucket
             prefix= datetime.datetime.now().strftime("%Y_%m_%d")
             file_name = "/{}".format(file_name[26:])
             self.s3.upload_fileobj(io.BytesIO(property_info.encode("utf-8")), self.BUCKET, 'sources/lamudi/'+prefix+file_name)    
