@@ -51,7 +51,6 @@ class PropertiesSpider(scrapy.Spider):
         At the bottom of the first page we can find data pagination
         """
         #Fetching the total number of pages
-        #pdb.set_trace()
         #pagination = response.xpath('//div[@class="pagination"]//div[@class="sort-text"]/text()').getall()
         #number_of_pages = re.search('\d{2,}', pagination[0]).group()
         #number_of_pages = response.xpath('//select[@class="sorting nativeDropdown js-pagination-dropdown"]/@data-pagination-end').getall()
@@ -83,7 +82,8 @@ class PropertiesSpider(scrapy.Spider):
             prefix= datetime.datetime.now().strftime("%Y_%m_%d")
             file_name = "/{}".format(file_name[26:])
             self.s3.upload_fileobj(io.BytesIO(property_info.encode("utf-8")), self.BUCKET, 'sources/lamudi/'+prefix+file_name)    
-            
+        pdb.set_trace()
+        
         list_property_info_w = response.xpath('//div[@class="item whatsapp"]').getall()
         list_property_info = response.xpath('//div[@class="item "]').getall()
         list_all_property_info = list_property_info_w + list_property_info
