@@ -19,6 +19,8 @@ import boto3
 import io
 import datetime
 
+from p_finder_scrapper.spiders.settings import mexican_states
+
 class PropertiesSpider(scrapy.Spider):  
     """ name is used as a reference of this code (spider) for scrapy commands
             such as 'scrapy crawl "name" '== instruction to run the spider
@@ -42,7 +44,11 @@ class PropertiesSpider(scrapy.Spider):
         'CONCURRENT_REQUEST_PER_IP':1,
         'ROBOTSTXT_OBEY': False
         }
-    start_urls = ['https://www.lamudi.com.mx/yucatan/casa/for-sale/']
+    
+    start_urls = ["https://www.lamudi.com.mx/"+ state +"/casa/for-sale/" for state in mexican_states["states"] ]
+    #The next list is to do some tests, but for the final code use the above list
+    start_urls = start_urls[3:5]
+    
     #def __init__(self):
     
     def parse(self, response):
@@ -50,15 +56,19 @@ class PropertiesSpider(scrapy.Spider):
         We are going to create a list of all the pages that show houses, the first page show 30 properties
         At the bottom of the first page we can find data pagination
         """
-        #Fetching the total number of pages
+        #Fetching the total number of pages if all properties for a given state are required
         #pagination = response.xpath('//div[@class="pagination"]//div[@class="sort-text"]/text()').getall()
         #number_of_pages = re.search('\d{2,}', pagination[0]).group()
         #number_of_pages = response.xpath('//select[@class="sorting nativeDropdown js-pagination-dropdown"]/@data-pagination-end').getall()
         #list of all links-categories
         #list_link_pages=['https://www.lamudi.com.mx/yucatan/casa/for-sale/?page=' + str(l) for l in range(1, int(number_of_pages))] 
         
-        #The next list is to do some tests, but for the final code to use the above list_link_pages
-        list_link_pages = ['https://www.lamudi.com.mx/yucatan/casa/for-sale/?page=1', "https://www.lamudi.com.mx/yucatan/casa/for-sale/?page=2"]
+        #url list, cosidering only two pages for each Mexican state
+        number_page = ["?page=1", "?page=2"]
+        url_string = response.url
+        pdb.set_trace()
+        list_link_pages = [ url_string + pagination for pagination in number_page]
+                
         for url_n in list_link_pages:
             #doing the request for each url
             yield scrapy.Request(url_n, callback=self.parse_pages_list)
@@ -82,7 +92,7 @@ class PropertiesSpider(scrapy.Spider):
             prefix= datetime.datetime.now().strftime("%Y_%m_%d")
             file_name = "/{}".format(file_name[26:])
             self.s3.upload_fileobj(io.BytesIO(property_info.encode("utf-8")), self.BUCKET, 'sources/lamudi/'+prefix+file_name)    
-        pdb.set_trace()
+        
         
         list_property_info_w = response.xpath('//div[@class="item whatsapp"]').getall()
         list_property_info = response.xpath('//div[@class="item "]').getall()
@@ -93,7 +103,7 @@ class PropertiesSpider(scrapy.Spider):
         list_all_property_url = list_property_url_w + list_property_url
         base_url = "https://www.lamudi.com.mx"
         list_all_property_url = [base_url + elem for elem in list_all_property_url]
-
+        
         for element in zip(list_all_property_info, list_all_property_url):
             #write the files
             store_in_s3(element[1], element[0])
