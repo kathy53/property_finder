@@ -12,7 +12,7 @@ s3 = boto3.client(service_name='s3', region_name='us-west-2',
 
 s3 = boto3.client('s3')
 bucket = 'property-finder-data' 
-key ="sources/lamudi/2022_11_22/3-recamaras-mod-136-casa-sustentable-en-privada-residencial.html"
+key ="sources/lamudi/2023_11_02/detalle/41032-73-136938b95d60-8ef9-e4aff7e8-a08c-3b2b"
     
 property_parameters = []
 

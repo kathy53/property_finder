@@ -1,0 +1,11 @@
+# in a terminal instantiate a docker image
+docker run --name create_lambda_layer -it --rm public.ecr.aws/lambda/python:3.8 /bin/bash
+docker exec -it create_lambda_layer /bin/bash
+mkdir -p lambda/python/lib/python3.8/site-packages
+pip install lxml -t lambda/python/lib/python3.8/site-packages/
+# pip3 install -r requirements.txt -t layer/python/lib/python3.8/site-packages/
+
+# in a new terminal, locally copy the files and compress them
+docker cp create_lambda_layer:/var/task/lambda Desktop/DE_project/to_zip
+cd Desktop/DE_project/to_zip
+zip -r lxml.zip python
