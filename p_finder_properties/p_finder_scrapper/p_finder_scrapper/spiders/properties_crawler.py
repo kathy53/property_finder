@@ -53,7 +53,7 @@ class PropertiesSpider(scrapy.Spider):
     
     def parse(self, response):
         """Here the scrapy spider works by connecting to each "start_urls"
-        We are going to create a list of all the pages that show houses, the first page show 30 properties
+        We are going to create a list of all the pages that show houses for each state, the first page show 30 properties
         At the bottom of the first page we can find data pagination
         """
         #Fetching the total number of pages if all properties for a given state are required
@@ -66,7 +66,6 @@ class PropertiesSpider(scrapy.Spider):
         #url list, cosidering only two pages for each Mexican state
         number_page = ["?page=1", "?page=2"]
         url_string = response.url
-        pdb.set_trace()
         list_link_pages = [ url_string + pagination for pagination in number_page]
                 
         for url_n in list_link_pages:
@@ -74,9 +73,19 @@ class PropertiesSpider(scrapy.Spider):
             yield scrapy.Request(url_n, callback=self.parse_pages_list)
             #for a given url_n it calls (callback) the function parse_pages_list and get the response of parse_pages_list
         
-    
     def parse_pages_list(self, response): 
-        """ Request a 'url_n' to gather detailed info about the listed properties on the given 'url_n'    
+        """ Request a 'url_n' to gather url of the listed properties on the given 'url_n'    
+        """
+        pdb.set_trace()
+        list_property_url = response.xpath('//div[@id="listings"]//a/@href').getall()
+        list_property_url = [url for url in list_property_url if "detalle" in url]
+        list_property_urls = ["https://www.lamudi.com.mx" + url for url in list_property_url]
+
+        for url in list_property_urls:
+            yield scrapy.Request(url, callback=self.parse_house_page)
+
+    def parse_house_page(self, response): 
+        """ Request a 'url' to gather detailed info about the property on the given 'url'    
             Store property information into a specific AWS object        
         """
         def store_in_s3(file_name, property_info):
@@ -92,8 +101,9 @@ class PropertiesSpider(scrapy.Spider):
             prefix= datetime.datetime.now().strftime("%Y_%m_%d")
             file_name = "/{}".format(file_name[26:])
             self.s3.upload_fileobj(io.BytesIO(property_info.encode("utf-8")), self.BUCKET, 'sources/lamudi/'+prefix+file_name)    
-        
-        
+
+        geocoordinates = response.xpath('//head/script[@type="application/ld+json"]').getall()
+
         list_property_info_w = response.xpath('//div[@class="item whatsapp"]').getall()
         list_property_info = response.xpath('//div[@class="item "]').getall()
         list_all_property_info = list_property_info_w + list_property_info
