@@ -76,7 +76,6 @@ class PropertiesSpider(scrapy.Spider):
     def parse_pages_list(self, response): 
         """ Request a 'url_n' to gather url of the listed properties on the given 'url_n'    
         """
-        pdb.set_trace()
         list_property_url = response.xpath('//div[@id="listings"]//a/@href').getall()
         list_property_url = [url for url in list_property_url if "detalle" in url]
         list_property_urls = ["https://www.lamudi.com.mx" + url for url in list_property_url]
@@ -93,30 +92,28 @@ class PropertiesSpider(scrapy.Spider):
             The name of the file should be unique to serve as a validation for future crawlings
             """
             # Storing data locally
-            # file_name = "./../properties_data/{}".format(file_name[26:])
+            # file_name = "./../properties_data/{}".format(file_name[34:])
             # with open(file_name, 'w') as f:
             #     f.write(property_info)
             
             # Uploading files into S3 bucket
             prefix= datetime.datetime.now().strftime("%Y_%m_%d")
-            file_name = "/{}".format(file_name[26:])
-            self.s3.upload_fileobj(io.BytesIO(property_info.encode("utf-8")), self.BUCKET, 'sources/lamudi/'+prefix+file_name)    
+            file_name = "/{}".format(file_name[34:])
+            self.s3.upload_fileobj(io.BytesIO(property_info.encode("utf-8")), self.BUCKET, 'sources/lamudi/all_mexico/'+prefix+file_name)    
 
         geocoordinates = response.xpath('//head/script[@type="application/ld+json"]').getall()
 
-        list_property_info_w = response.xpath('//div[@class="item whatsapp"]').getall()
-        list_property_info = response.xpath('//div[@class="item "]').getall()
-        list_all_property_info = list_property_info_w + list_property_info
+        row_details = response.xpath('//div[@class="row-details"]').getall()
+        description = response.xpath('//div[@class="description"]').getall()
+        facilities = response.xpath('//div[@class="facilities"]').getall()
+        geo_data =  response.xpath('//head/script[@type="application/ld+json"]').getall()
+        all_property_info = row_details[0] + description[0] + facilities[0] + geo_data[0]
 
-        list_property_url_w = response.xpath('//div[@class="item whatsapp"]/a/@href').getall()
-        list_property_url = response.xpath('//div[@class="item "]/a/@href').getall()
-        list_all_property_url = list_property_url_w + list_property_url
-        base_url = "https://www.lamudi.com.mx"
-        list_all_property_url = [base_url + elem for elem in list_all_property_url]
+        property_url = response.url
+        pdb.set_trace()
+
+        #write the files
+        store_in_s3(property_url, all_property_info)
         
-        for element in zip(list_all_property_info, list_all_property_url):
-            #write the files
-            store_in_s3(element[1], element[0])
-        
-        print('\n\n+++++++++++++++++++++++++++++++++++\nFinishing one page :)\n\n+++++++++++++++++++++++++++++++++++\n')
+        print('\n\n+++++++++++++++++++++++++++++++++++\nFinishing one property :)\n\n+++++++++++++++++++++++++++++++++++\n')
     
