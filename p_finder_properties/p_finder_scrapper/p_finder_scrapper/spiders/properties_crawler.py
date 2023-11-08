@@ -100,14 +100,12 @@ class PropertiesSpider(scrapy.Spider):
             prefix= datetime.datetime.now().strftime("%Y_%m_%d")
             file_name = "/{}".format(file_name[34:])
             self.s3.upload_fileobj(io.BytesIO(property_info.encode("utf-8")), self.BUCKET, 'sources/lamudi/all_mexico/'+prefix+file_name)    
-
-        geocoordinates = response.xpath('//head/script[@type="application/ld+json"]').getall()
-
+        url_link = '<div class="link">' + response.url + '</div>\n'
         row_details = response.xpath('//div[@class="row-details"]').getall()
         description = response.xpath('//div[@class="description"]').getall()
         facilities = response.xpath('//div[@class="facilities"]').getall()
         geo_data =  response.xpath('//head/script[@type="application/ld+json"]').getall()
-        all_property_info = row_details[0] + description[0] + facilities[0] + geo_data[0]
+        all_property_info = url_link + row_details[0] + description[0] + facilities[0] + geo_data[0]
 
         property_url = response.url
         pdb.set_trace()
