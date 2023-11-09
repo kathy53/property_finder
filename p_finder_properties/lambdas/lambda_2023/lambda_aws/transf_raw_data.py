@@ -64,7 +64,7 @@ def lambda_handler(event, context):
          'publisher_phone' : publisher_phone,
            'crawling_date' : datetime.datetime.now().strftime("%Y_%m_%d")
     }   
-    json_object = json.dumps(property_parameters, indent = 4) 
+    json_object = json.dumps(property_parameters, indent = 4, ensure_ascii=False) 
     
     prefix= datetime.datetime.now().strftime("%Y_%m_%d")
     file_name = f"/{property_parameters['property_url'][26:-5]}.json"

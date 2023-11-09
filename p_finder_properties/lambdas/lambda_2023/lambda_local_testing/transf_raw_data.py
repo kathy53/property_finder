@@ -76,7 +76,7 @@ property_parameters = {
 print(property_parameters['property_url'])
 ########################################
 
-json_object = json.dumps(property_parameters, indent = 4) 
+json_object = json.dumps(property_parameters, indent = 4, ensure_ascii=False) 
 
 
 prefix= datetime.datetime.now().strftime("%Y_%m_%d")
