@@ -46,7 +46,8 @@ publisher_phone = document.xpath('//div[@class="phone-number"]/span/text()')
 surroundings = document.xpath('//div[@class="nearby-locations"]/ul//text()')
 
 property_parameters = {
-                    'title': document.xpath('//div[@class="main-title"]/h1/text()')[0],
+                  'source' : "lamudi",
+                   'title' : document.xpath('//div[@class="main-title"]/h1/text()')[0],
              'property_url': re.search('adUrl:\s"(.*?)"',str(document.xpath('//script[contains(text(),"coordinates")]//text()')[0])).group(1),
                 'location' : document.xpath('//div[@class="view-map__text"]/text()')[0],
              'description' : document.xpath('//div[@id="description-text"]/text()')[0],
