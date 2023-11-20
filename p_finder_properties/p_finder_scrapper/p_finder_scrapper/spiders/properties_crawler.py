@@ -47,7 +47,7 @@ class PropertiesSpider(scrapy.Spider):
     
     start_urls = ["https://www.lamudi.com.mx/"+ state +"/casa/for-sale/" for state in mexican_states["states"] ]
     #The next list is to do some tests, but for the final code use the above list
-    start_urls = start_urls[3:5]
+    #start_urls = start_urls[3:5]
     
     #def __init__(self):
     
@@ -101,18 +101,19 @@ class PropertiesSpider(scrapy.Spider):
             file_name = "/{}".format(file_name[34:])
             self.s3.upload_fileobj(io.BytesIO(property_info.encode("utf-8")), self.BUCKET, 'sources/lamudi/all_mexico/'+prefix+file_name)    
         
-        #row_details = response.xpath('//div[@class="row-details"]').getall()
-        #description = response.xpath('//div[@class="description"]').getall()
-        #facilities = response.xpath('//div[@class="facilities"]').getall()
-        #geo_data =  response.xpath('//head/script[@type="application/ld+json"]').getall()
-        #all_property_info = response.url + row_details[0] + description[0] + facilities[0] + geo_data[0]
+        # row_details = response.xpath('//div[@class="row-details"]').getall()
+        # description = response.xpath('//div[@class="description"]').getall()
+        # facilities = response.xpath('//div[@class="facilities"]').getall()
+        # geo_data =  response.xpath('//head/script[@type="application/ld+json"]').getall()
+        # all_property_info = response.url + row_details[0] + description[0] + facilities[0] + geo_data[0]
 
         property_url = response.url
         property_info = response.text
-        pdb.set_trace()
+        # pdb.set_trace()
 
-        #write the files
+        # write the files
         store_in_s3(property_url, property_info)
         
-        print('\n\n+++++++++++++++++++++++++++++++++++\nFinishing one property :)\n\n+++++++++++++++++++++++++++++++++++\n')
+        # uncomment the next line to run tests
+        # print('\n\n+++++++++++++++++++++++++++++++++++\nFinishing one property :)\n\n+++++++++++++++++++++++++++++++++++\n')
     
