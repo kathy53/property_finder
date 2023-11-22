@@ -6,6 +6,7 @@ import pymysql
 # from xmltodict import parse 
 import hashlib
 import logging #used to print your own logs
+import requests
 
 logger = logging.getLogger() #loggers should be instantiated trough the logging.getLogger(name)
 logger.setLevel(logging.INFO) #logger threshold to process the logg
@@ -90,12 +91,13 @@ advertisements_values = [ contents[value] for value in advertisements_keys[1:-1]
 advertisements_values.insert(0, advertisement_id)
 advertisements_values.append(publisher_id)
 
+import pdb; pdb.set_trace()
+
 advertisements_k = ', '.join([str(key) for key in advertisements_keys])
 advertisements_v = '\', \''.join([str(value) for value in advertisements_values])
 
 query = f"INSERT INTO advertisements ({advertisements_k}) VALUES ('{advertisements_v}')"
 # execute_query(conn, query)
-import pdb; pdb.set_trace()
 
 # conn_k = conn_k = 'publisher_id' + ', ' + 'advertisement_id'
 # conn_v = publisher_id + '\', \'' + advertisement_id
