@@ -66,11 +66,12 @@ except Exception as e:
     print('Error hehehe')
     raise e
 
-environtment = {}
+environtment = pd.DataFrame()
 latitudes = []
 longitudes = []
 
-contador = 1
+distinct_loc_in_file = [loc for sub_dict in states_municipalities_centroids.values() for loc in sub_dict.keys()]
+distinct_loc_in_file = [loc for loc in distinct_loc_in_file if distinct_loc_in_file.count(loc) == 1]
 
 for state, locality in unique_localities:
     state = unidecode(state).lower().replace(" ","_")
@@ -80,45 +81,52 @@ for state, locality in unique_localities:
     if any(locality in loc for loc in states_municipalities_centroids[state].keys()):                                               # validating existing location 
         validated_loc = [locality in loc for loc in states_municipalities_centroids[state].keys()]                          
         locality = next((key for key, flag in zip(states_municipalities_centroids[state].keys(), validated_loc) if flag), None)     # updating locality to an existing one in the local states_municipalities.json file
-        
-        # steps in case state exists or not
-        try:
+        if state:
             coordinates = states_municipalities_centroids[state][locality]
             environtment[state] = state
             environtment[locality] = locality
             latitudes.append(coordinates[0])
             longitudes.append(coordinates[1])
-        except:
-            state = "unknown"
-            with open ("missing_localities.txt", "a") as f:
-                text = state + ': ' + locality + '\n'
-                f.write(text)
-    else:
+        else:
+            if locality in distinct_loc_in_file:
+                state = [state for state, sub_dict in states_municipalities_centroids.items() if locality in sub_dict.keys()]
+                coordinates = states_municipalities_centroids[state][locality]
+                environtment[state] = state
+                environtment[locality] = locality
+                latitudes.append(coordinates[0])
+                longitudes.append(coordinates[1])
+            else:
+                state = "unknown"
+                with open ("missing_localities.txt", "a") as f:
+                    text = state + ': ' + locality + '\n'
+                    f.write(text)
+    # in case the locality does not exist in the advertisement table 
+    else:                                                                                              
         with open ("missing_localities.txt", "a") as f:
             text = state + ': ' + locality + '\n'
             f.write(text)
 
 latitude = ','.join([str(lat) for lat in latitudes])
 longitude = ','.join([str(lon) for lon in longitudes])
-import pdb; pdb.set_trace()
 
 aq_and_sr_url = f"https://air-quality-api.open-meteo.com/v1/air-quality?latitude={latitude}&longitude={longitude}&hourly=pm10,pm2_5,carbon_monoxide,nitrogen_dioxide,sulphur_dioxide,ozone,aerosol_optical_depth,dust,uv_index,uv_index_clear_sky&start_date=2022-08-01&end_date=2023-11-20"
 weath_url = f"https://archive-api.open-meteo.com/v1/archive?latitude={latitude}&longitude={longitude}&start_date=2020-01-01&end_date=2023-11-20&hourly=temperature_2m,relative_humidity_2m,dew_point_2m,apparent_temperature,precipitation,rain,snowfall,snow_depth,weather_code,cloud_cover,et0_fao_evapotranspiration,wind_speed_10m,wind_direction_10m,wind_gusts_10m,soil_temperature_0_to_7cm"
 
 aq_and_sr_json = get_json(aq_and_sr_url)
-weath_json = get_json(weath_url)
+# weath_json = get_json(weath_url)
+import pdb; pdb.set_trace()
 
 aq_cols = ['time', 'pm10', 'pm2_5', 'carbon_monoxide', 'nitrogen_dioxide', 'sulphur_dioxide', 'ozone', 'aerosol_optical_depth', 'dust']
 sr_cols = ['uv_index', 'uv_index_clear_sky']
-wt_cols = ['temperature_2m','relative_humidity_2m','dew_point_2m','apparent_temperature','precipitation','rain','snowfall','snow_depth','weather_code','cloud_cover','et0_fao_evapotranspiration','wind_speed_10m','wind_direction_10m','wind_gusts_10m','soil_temperature_0_to_7cm']
+# wt_cols = ['temperature_2m','relative_humidity_2m','dew_point_2m','apparent_temperature','precipitation','rain','snowfall','snow_depth','weather_code','cloud_cover','et0_fao_evapotranspiration','wind_speed_10m','wind_direction_10m','wind_gusts_10m','soil_temperature_0_to_7cm']
 
 for i in range(0,len(latitude)-1):
     aq_data = {key: aq_and_sr_json[0]['hourly'][key] for key in aq_cols}
     sr_data = {key: aq_and_sr_json[0]['hourly'][key] for key in sr_cols}
-    wt_data = {key: weath_json[0]['hourly'][key] for key in wt_cols}
+  #  wt_data = {key: weath_json[0]['hourly'][key] for key in wt_cols}
     environtment['aq_data'] = aq_data
     environtment['sr_data'] = sr_data
-    environtment['wt_data'] = wt_data
+   # environtment['wt_data'] = wt_data
 
 
 
