@@ -44,9 +44,9 @@ def execute_query(conn, query):
         logger.info("Now connected!")
     with conn.cursor() as cur:
         cur.execute(query)
-        datasets = cur.fetchall()
+        # datasets = cur.fetchall()
         conn.commit()
-    return datasets
+    # return datasets
 
 def get_json(url):
     url = url
@@ -58,8 +58,9 @@ conn = get_connection()
 
 try:
     query = f"SELECT province, locality FROM advertisements"
-    # geo_locations = pd.read_sql(query, get_connection())
-    db_localities = execute_query(conn, query)
+    db_loc = pd.read_sql(query, get_connection())
+    #db_localities = execute_query(conn, query)
+    db_localities = list(zip(db_loc.province, db_loc.locality))
     unique_localities = set(db_localities)
 except Exception as e:
     print(e)
@@ -69,6 +70,8 @@ except Exception as e:
 environtment = pd.DataFrame()
 latitudes = []
 longitudes = []
+states = []
+localities = []
 
 distinct_loc_in_file = [loc for sub_dict in states_municipalities_centroids.values() for loc in sub_dict.keys()]
 distinct_loc_in_file = [loc for loc in distinct_loc_in_file if distinct_loc_in_file.count(loc) == 1]
@@ -83,16 +86,18 @@ for state, locality in unique_localities:
         locality = next((key for key, flag in zip(states_municipalities_centroids[state].keys(), validated_loc) if flag), None)     # updating locality to an existing one in the local states_municipalities.json file
         if state:
             coordinates = states_municipalities_centroids[state][locality]
-            environtment[state] = state
-            environtment[locality] = locality
+            states.append(state)
+            localities.append(locality)
+            
             latitudes.append(coordinates[0])
             longitudes.append(coordinates[1])
+
         else:
             if locality in distinct_loc_in_file:
                 state = [state for state, sub_dict in states_municipalities_centroids.items() if locality in sub_dict.keys()]
                 coordinates = states_municipalities_centroids[state][locality]
-                environtment[state] = state
-                environtment[locality] = locality
+                states.append(state)
+                localities.append(locality)
                 latitudes.append(coordinates[0])
                 longitudes.append(coordinates[1])
             else:
@@ -106,30 +111,38 @@ for state, locality in unique_localities:
             text = state + ': ' + locality + '\n'
             f.write(text)
 
-latitude = ','.join([str(lat) for lat in latitudes])
-longitude = ','.join([str(lon) for lon in longitudes])
+environtment["states"] = states
+environtment["localities"] = localities
+environtment["latitude_centroid"] = latitudes
+environtment["longitude_centroid"] = longitudes
+
+latitudes_probe = latitudes[:3]
+longitudes_probe = longitudes[:3]
+
+latitude = ','.join([str(lat) for lat in latitudes_probe])
+longitude = ','.join([str(lon) for lon in longitudes_probe])
 
 aq_and_sr_url = f"https://air-quality-api.open-meteo.com/v1/air-quality?latitude={latitude}&longitude={longitude}&hourly=pm10,pm2_5,carbon_monoxide,nitrogen_dioxide,sulphur_dioxide,ozone,aerosol_optical_depth,dust,uv_index,uv_index_clear_sky&start_date=2022-08-01&end_date=2023-11-20"
 weath_url = f"https://archive-api.open-meteo.com/v1/archive?latitude={latitude}&longitude={longitude}&start_date=2020-01-01&end_date=2023-11-20&hourly=temperature_2m,relative_humidity_2m,dew_point_2m,apparent_temperature,precipitation,rain,snowfall,snow_depth,weather_code,cloud_cover,et0_fao_evapotranspiration,wind_speed_10m,wind_direction_10m,wind_gusts_10m,soil_temperature_0_to_7cm"
 
 aq_and_sr_json = get_json(aq_and_sr_url)
-# weath_json = get_json(weath_url)
+weath_json = get_json(weath_url)
 import pdb; pdb.set_trace()
 
 aq_cols = ['time', 'pm10', 'pm2_5', 'carbon_monoxide', 'nitrogen_dioxide', 'sulphur_dioxide', 'ozone', 'aerosol_optical_depth', 'dust']
-sr_cols = ['uv_index', 'uv_index_clear_sky']
-# wt_cols = ['temperature_2m','relative_humidity_2m','dew_point_2m','apparent_temperature','precipitation','rain','snowfall','snow_depth','weather_code','cloud_cover','et0_fao_evapotranspiration','wind_speed_10m','wind_direction_10m','wind_gusts_10m','soil_temperature_0_to_7cm']
+sr_cols = ['time', 'uv_index', 'uv_index_clear_sky']
+wt_cols = ['time', 'temperature_2m','relative_humidity_2m','dew_point_2m','apparent_temperature','precipitation','rain','snowfall','snow_depth','weather_code','cloud_cover','et0_fao_evapotranspiration','wind_speed_10m','wind_direction_10m','wind_gusts_10m','soil_temperature_0_to_7cm']
 
-for i in range(0,len(latitude)-1):
-    aq_data = {key: aq_and_sr_json[0]['hourly'][key] for key in aq_cols}
-    sr_data = {key: aq_and_sr_json[0]['hourly'][key] for key in sr_cols}
-  #  wt_data = {key: weath_json[0]['hourly'][key] for key in wt_cols}
-    environtment['aq_data'] = aq_data
-    environtment['sr_data'] = sr_data
-   # environtment['wt_data'] = wt_data
+env_temp = pd.DataFrame(aq_and_sr_json)
+env_temp["aq"] = env_temp["hourly"].map(lambda x: {key: x[key] for key in aq_cols})
+env_temp["sr"] = env_temp.hourly.map(lambda x: {key: x[key] for key in sr_cols})
+#selection
+environtment = pd.concat([environtment, env_temp], axis=1)
 
-
-
-
-
-
+cols = ['states', 'localities', 'latitude_centroid', 'longitude_centroid', 'latitude', 'longitude', 'aq', 'sr']
+cols_s = ', '.join(map(str,cols))
+for _, row in environtment.iloc[:3].iterrows():
+    values = '\', \''.join(map(str,row[[cols]].tolist()))
+    query = f"INSERT INTO environtments ({cols_s}) VALUES('{values}')"
+    print(query)
+    # execute_query(conn, query)
